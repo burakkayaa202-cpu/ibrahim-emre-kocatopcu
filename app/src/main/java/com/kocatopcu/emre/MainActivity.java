@@ -3,9 +3,12 @@ package com.kocatopcu.emre;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.widget.Button;
@@ -22,14 +25,8 @@ import java.util.Locale;
 import java.util.Random;
 
 /**
- * =========================================================================
- * PROJE ADI: İbrahim Emre Kocatopcu - Ultra Gelişmiş Mobil Uygulama Çekirdeği
- * GELİŞTİRİCİ: Özel Anka / Kocatopcu Ekibi
- * SÜRÜM: v4.2.0-PROD
- * AÇIKLAMA: Bu sınıf, İbrahim Emre Kocatopcu'ya özel olarak tasarlanmış;
- *           dinamik veri işleme, animasyonlar, oturum loglama ve detaylı 
- *           içerik havuzunu barındıran ana Activity sınıfıdır.
- * =========================================================================
+ * İbrahim Emre Kocatopcu - Mobil Uygulama
+ * Ana Activity: veri havuzu, animasyon, titreşim, tema ve oturum kaydı.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -37,8 +34,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREF_NAME = "EmrePrefs";
     private static final String KEY_CLICK_COUNT = "total_clicks";
     private static final String KEY_LAST_ACCESS = "last_access_time";
+    private static final String KEY_THEME_INDEX = "theme_index";
 
-    // UI Bileşenleri
+    // UI bileşenleri
     private TextView txtBaslik;
     private TextView txtDetayBilgi;
     private TextView txtSayacGosterge;
@@ -48,25 +46,25 @@ public class MainActivity extends AppCompatActivity {
     private Button btnSifirla;
     private LinearLayout rootLayout;
 
-    // Veri Yönetimi ve Sayaçlar
+    // Veri ve sayaçlar
     private int tiklamaSayaci = 0;
     private int temaIndex = 0;
     private SharedPreferences sharedPreferences;
     private Vibrator vibrator;
     private Random randomGenerator;
 
-    // İçerik Havuzları (Genişletilmiş Veri Setleri)
     private final ArrayList<EmreModel> veriHavuzu = new ArrayList<>();
+
     private final String[] temaArkaPlanlari = {
-        "#0D1117", // GitHub Dark
-        "#111827", // Modern Midnight
-        "#1a0b2e", // Deep Purple
-        "#0f2027", // Dark Neon Blue
-        "#2c1810"  // Warm Dark Roast
+            "#0D1117", // GitHub Dark
+            "#111827", // Midnight
+            "#1a0b2e", // Deep Purple
+            "#0f2027", // Dark Neon Blue
+            "#2c1810"  // Warm Dark Roast
     };
 
     private final String[] neonRenkler = {
-        "#58A6FF", "#3FB950", "#D29922", "#F85149", "#BC8CFF", "#7EE787", "#00F2FE"
+            "#58A6FF", "#3FB950", "#D29922", "#F85149", "#BC8CFF", "#7EE787", "#00F2FE"
     };
 
     @Override
@@ -74,51 +72,39 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Sistem Servisleri ve Hafıza Başlatma
         initializationSubsystem();
-
-        // UI Bağlantıları
         bindUserInterfaceComponents();
-
-        // Veri Havuzunu Doldur (1000+ satırlık detay mantığını besleyen zengin içerik)
         populateMasterDataPool();
-
-        // UI Dinamik Olay Atamaları
         setupEventListeners();
-
-        // Son oturum verilerini yükle ve logla
+        applyTheme();
+        updateCounterText();
         loadPersistentStateAndLog();
 
-        Log.d(TAG, "MainActivity başarıyla başlatıldı ve çalışır duruma geldi.");
+        Log.d(TAG, "MainActivity başarıyla başlatıldı.");
     }
 
-    /**
-     * Sistem servislerini ve harici modülleri hazırlar.
-     */
+    /** Sistem servislerini ve kayıtlı verileri hazırlar. */
     private void initializationSubsystem() {
         sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         randomGenerator = new Random();
         tiklamaSayaci = sharedPreferences.getInt(KEY_CLICK_COUNT, 0);
+        temaIndex = sharedPreferences.getInt(KEY_THEME_INDEX, 0);
     }
 
-    /**
-     * XML arayüz elemanlarını Java nesnelerine bağlar.
-     */
+    /** XML'deki elemanları Java nesnelerine bağlar. */
     private void bindUserInterfaceComponents() {
+        rootLayout = findViewById(R.id.rootLayout);
         txtBaslik = findViewById(R.id.txtBaslik);
-        txtDetayBilgi = findViewById(R.id.txtDetayBilgi != 0 ? R.id.txtDetayBilgi : R.id.txtBaslik); // Güvenli fallback
-        txtSayacGosterge = findViewById(R.id.txtSayacGosterge != 0 ? R.id.txtSayacGosterge : R.id.txtBaslik);
-        txtLogEkrani = findViewById(R.id.txtLogEkrani != 0 ? R.id.txtLogEkrani : R.id.txtBaslik);
+        txtDetayBilgi = findViewById(R.id.txtDetayBilgi);
+        txtSayacGosterge = findViewById(R.id.txtSayacGosterge);
+        txtLogEkrani = findViewById(R.id.txtLogEkrani);
         btnVeriGetir = findViewById(R.id.btnTikla);
-        btnTemaDegistir = findViewById(R.id.btnTemaDegistir != 0 ? R.id.btnTikla : R.id.btnTikla);
-        btnSifirla = findViewById(R.id.btnSifirla != 0 ? R.id.btnTikla : R.id.btnTikla);
-        rootLayout = findViewById(R.id.rootLayout != 0 ? R.id.rootLayout : android.R.id.content);
+        btnTemaDegistir = findViewById(R.id.btnTemaDegistir);
+        btnSifirla = findViewById(R.id.btnSifirla);
     }
 
-    /**
-     * İbrahim Emre Kocatopcu ve sanat/tarih temalı devasa veri setini oluşturur.
-     */
+    /** İçerik havuzunu doldurur. */
     private void populateMasterDataPool() {
         veriHavuzu.add(new EmreModel("Kimlik Analizi", "İbrahim Emre Kocatopcu: Ekibin lideri, kararlı geliştirici ve güvenilir dost.", "Profil"));
         veriHavuzu.add(new EmreModel("İsim Kökeni", "Emre: Eski Türkçe'de aşık, dost, halk ozanı ve gönül verilmiş kimse demektir.", "Kültür"));
@@ -132,9 +118,7 @@ public class MainActivity extends AppCompatActivity {
         veriHavuzu.add(new EmreModel("Bilgi Notu", "\"İlim ilim bilmektir, ilim kendin bilmektir.\" — Yunus Emre", "Bilim"));
     }
 
-    /**
-     * Butonlara ve dokunma olaylarına gelişmiş dinleyiciler atar.
-     */
+    /** Buton dinleyicilerini atar. */
     private void setupEventListeners() {
         if (btnVeriGetir != null) {
             btnVeriGetir.setOnClickListener(v -> {
@@ -142,26 +126,49 @@ public class MainActivity extends AppCompatActivity {
                 triggerHapticFeedback();
                 playScaleAnimation(v);
                 processAndDisplayRandomData();
+                updateCounterText();
                 savePersistentState();
+            });
+        }
+
+        if (btnTemaDegistir != null) {
+            btnTemaDegistir.setOnClickListener(v -> {
+                temaIndex = (temaIndex + 1) % temaArkaPlanlari.length;
+                triggerHapticFeedback();
+                playScaleAnimation(v);
+                applyTheme();
+                savePersistentState();
+                appendExecutionLog("Tema değişti: " + temaArkaPlanlari[temaIndex]);
+            });
+        }
+
+        if (btnSifirla != null) {
+            btnSifirla.setOnClickListener(v -> {
+                tiklamaSayaci = 0;
+                triggerHapticFeedback();
+                playScaleAnimation(v);
+                updateCounterText();
+                savePersistentState();
+                if (txtBaslik != null) {
+                    txtBaslik.setText("İbrahim Emre Kocatopcu");
+                }
+                appendExecutionLog("Sayaç sıfırlandı.");
             });
         }
     }
 
-    /**
-     * Rastgele veri seçer ve arayüzü günceller.
-     */
+    /** Rastgele veri seçer ve ekranda gösterir. */
     private void processAndDisplayRandomData() {
         if (veriHavuzu.isEmpty()) return;
 
-        int index = randomGenerator.nextInt(veriHavuzu.size());
-        EmreModel secilenVeri = veriHavuzu.get(index);
+        EmreModel secilenVeri = veriHavuzu.get(randomGenerator.nextInt(veriHavuzu.size()));
 
-        String formatliMetin = String.format(Locale.getDefault(), 
-            "📌 [%s] %s\n\n💡 Detay: %s\n\n🔄 Toplam Etkileşim: %d",
-            secilenVeri.kategori,
-            secilenVeri.baslik,
-            secilenVeri.aciklama,
-            tiklamaSayaci
+        String formatliMetin = String.format(Locale.getDefault(),
+                "📌 [%s] %s\n\n💡 Detay: %s\n\n🔄 Toplam Etkileşim: %d",
+                secilenVeri.kategori,
+                secilenVeri.baslik,
+                secilenVeri.aciklama,
+                tiklamaSayaci
         );
 
         if (txtBaslik != null) {
@@ -173,27 +180,41 @@ public class MainActivity extends AppCompatActivity {
         appendExecutionLog("Veri yüklendi: " + secilenVeri.baslik);
     }
 
-    /**
-     * Dokunma hissiyatı için kısa titreşim üretir.
-     */
+    /** Seçili arka plan temasını uygular. */
+    private void applyTheme() {
+        if (rootLayout != null) {
+            rootLayout.setBackgroundColor(Color.parseColor(temaArkaPlanlari[temaIndex]));
+        }
+    }
+
+    /** Sayaç göstergesini günceller (layout'ta görünürse). */
+    private void updateCounterText() {
+        if (txtSayacGosterge != null) {
+            txtSayacGosterge.setText("Toplam tıklama: " + tiklamaSayaci);
+        }
+    }
+
+    /** Kısa titreşim üretir. */
     private void triggerHapticFeedback() {
         try {
             if (vibrator != null && vibrator.hasVibrator()) {
-                vibrator.vibrate(40);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    vibrator.vibrate(40);
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Titreşim hatası: " + e.getMessage());
         }
     }
 
-    /**
-     * Butonlar için şık bir ölçeklendirme animasyonu oynatır.
-     */
-    private void playScaleAnimation(android.view.View view) {
+    /** Buton için küçülüp büyüyen animasyon. */
+    private void playScaleAnimation(View view) {
         ScaleAnimation scaleAnim = new ScaleAnimation(
-            1.0f, 0.92f, 1.0f, 0.92f,
-            Animation.RELATIVE_TO_SELF, 0.5f,
-            Animation.RELATIVE_TO_SELF, 0.5f
+                1.0f, 0.92f, 1.0f, 0.92f,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f
         );
         scaleAnim.setDuration(100);
         scaleAnim.setRepeatCount(1);
@@ -201,67 +222,48 @@ public class MainActivity extends AppCompatActivity {
         view.startAnimation(scaleAnim);
     }
 
-    /**
-     * Uygulama içi log ekranına ve konsola zaman damgalı log basar.
-     */
+    /** Zaman damgalı log yazar (konsol + ekran). */
     private void appendExecutionLog(String mesaj) {
         String zaman = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
         String logSatiri = "[" + zaman + "] " + mesaj;
         Log.i(TAG, logSatiri);
-        
-        if (txtLogEkrani != null && txtLogEkrani != txtBaslik) {
+
+        if (txtLogEkrani != null) {
             String mevcutLoglar = txtLogEkrani.getText().toString();
             txtLogEkrani.setText(logSatiri + "\n" + mevcutLoglar);
         }
     }
 
-    /**
-     * SharedPreferences kullanarak durumu hafızaya kaydeder.
-     */
+    /** Durumu SharedPreferences'a kaydeder. */
     private void savePersistentState() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt(KEY_CLICK_COUNT, tiklamaSayaci);
-        editor.putString(KEY_LAST_ACCESS, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
+        editor.putInt(KEY_THEME_INDEX, temaIndex);
+        editor.putString(KEY_LAST_ACCESS,
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
         editor.apply();
     }
 
-    /**
-     * Hafızadaki son durumu yükler ve log ekler.
-     */
+    /** Kayıtlı durumu okuyup log'a yazar. */
     private void loadPersistentStateAndLog() {
         String sonErisim = sharedPreferences.getString(KEY_LAST_ACCESS, "İlk açılış");
         appendExecutionLog("Oturum başlatıldı. Kayıtlı tıklama: " + tiklamaSayaci);
         appendExecutionLog("Son erişim: " + sonErisim);
-        
-        Toast.makeText(this, "Hoş geldin İbrahim Emre Kocatopcu!", Toast.LENGTH_SHORT).show();
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.i(TAG, "Uygulama ön plana geldi (onResume).");
+        Toast.makeText(this, "Hoş geldin İbrahim Emre Kocatopcu!", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         savePersistentState();
-        Log.i(TAG, "Uygulama arka plana geçti, veriler kaydedildi (onPause).");
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "MainActivity yok ediliyor, kaynaklar serbest bırakıldı.");
-    }
-
-    /**
-     * Veri modellerini tutmak için dahili yardımcı sınıf (POJO).
-     */
+    /** Veri modeli. */
     public static class EmreModel {
-        public String baslik;
-        public String aciklama;
-        public String kategori;
+        public final String baslik;
+        public final String aciklama;
+        public final String kategori;
 
         public EmreModel(String baslik, String aciklama, String kategori) {
             this.baslik = baslik;
