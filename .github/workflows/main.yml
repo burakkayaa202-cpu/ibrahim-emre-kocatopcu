@@ -1,4 +1,4 @@
-name: Emre Build & Release
+name: EmreApp Build & Release
 
 on:
   push:
@@ -17,19 +17,14 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install Android SDK & Build Tools
-      uses: android-actions/setup-android@v3
-
-    - name: Generate Gradle Wrapper on-the-fly
+    - name: Generate Gradle Wrapper & Build APK
       run: |
         gradle wrapper --gradle-version 8.0
         chmod +x gradlew
-
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+        ./gradlew assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: emrekocatopcu_31
+        name: ibrahim-emre-apk
         path: app/build/outputs/apk/debug/app-debug.apk
