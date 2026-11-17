@@ -3,272 +3,255 @@ package com.kocatopcu.emre;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.ScaleAnimation;
-import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.ColorUtils;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
 
-/**
- * İbrahim Emre Kocatopcu - Mobil Uygulama
- * Ana Activity: veri havuzu, animasyon, titreşim, tema ve oturum kaydı.
- */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "EmreAppCore";
     private static final String PREF_NAME = "EmrePrefs";
-    private static final String KEY_CLICK_COUNT = "total_clicks";
-    private static final String KEY_LAST_ACCESS = "last_access_time";
-    private static final String KEY_THEME_INDEX = "theme_index";
+    private static final String KEY_COUNT = "total_clicks";
+    private static final String KEY_LAST = "last_access_time";
+    private static final String KEY_THEME = "theme_index";
 
-    // UI bileşenleri
-    private TextView txtBaslik;
-    private TextView txtDetayBilgi;
-    private TextView txtSayacGosterge;
-    private TextView txtLogEkrani;
-    private Button btnVeriGetir;
-    private Button btnTemaDegistir;
-    private Button btnSifirla;
-    private LinearLayout rootLayout;
+    private View rootLayout;
+    private TextView txtAvatar, txtSelam, txtKategori, txtBaslik, txtMetin,
+            txtKaynak, txtSayac, txtTemaAdi, txtSonErisim;
+    private MaterialCardView cardIcerik, cardSayac, cardTema;
+    private MaterialButton btnTikla, btnTema, btnSifirla;
 
-    // Veri ve sayaçlar
-    private int tiklamaSayaci = 0;
-    private int temaIndex = 0;
-    private SharedPreferences sharedPreferences;
+    private SharedPreferences prefs;
     private Vibrator vibrator;
-    private Random randomGenerator;
+    private final Random random = new Random();
+    private int sayac = 0;
+    private int temaIndex = 0;
+    private int sonIndex = -1;
 
-    private final ArrayList<EmreModel> veriHavuzu = new ArrayList<>();
+    private static class Tema {
+        final String ad; final String arka; final String kart; final String vurgu;
+        Tema(String ad, String arka, String kart, String vurgu) {
+            this.ad = ad; this.arka = arka; this.kart = kart; this.vurgu = vurgu;
+        }
+    }
 
-    private final String[] temaArkaPlanlari = {
-            "#0D1117", // GitHub Dark
-            "#111827", // Midnight
-            "#1a0b2e", // Deep Purple
-            "#0f2027", // Dark Neon Blue
-            "#2c1810"  // Warm Dark Roast
+    private static class Bilgi {
+        final String kategori, baslik, metin, kaynak;
+        Bilgi(String kategori, String baslik, String metin, String kaynak) {
+            this.kategori = kategori; this.baslik = baslik; this.metin = metin; this.kaynak = kaynak;
+        }
+    }
+
+    private final Tema[] temalar = {
+            new Tema("Gece", "#0D1117", "#161B22", "#58A6FF"),
+            new Tema("Okyanus", "#0B1620", "#12232F", "#2DD4BF"),
+            new Tema("Mor", "#140B24", "#1E1236", "#A78BFA"),
+            new Tema("Gün Batımı", "#1A0F0F", "#261717", "#FB923C"),
+            new Tema("Orman", "#0C1710", "#132219", "#4ADE80")
     };
 
-    private final String[] neonRenkler = {
-            "#58A6FF", "#3FB950", "#D29922", "#F85149", "#BC8CFF", "#7EE787", "#00F2FE"
-    };
+    private final ArrayList<Bilgi> havuz = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initializationSubsystem();
-        bindUserInterfaceComponents();
-        populateMasterDataPool();
-        setupEventListeners();
-        applyTheme();
-        updateCounterText();
-        loadPersistentStateAndLog();
-
-        Log.d(TAG, "MainActivity başarıyla başlatıldı.");
-    }
-
-    /** Sistem servislerini ve kayıtlı verileri hazırlar. */
-    private void initializationSubsystem() {
-        sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        randomGenerator = new Random();
-        tiklamaSayaci = sharedPreferences.getInt(KEY_CLICK_COUNT, 0);
-        temaIndex = sharedPreferences.getInt(KEY_THEME_INDEX, 0);
+        sayac = prefs.getInt(KEY_COUNT, 0);
+        temaIndex = prefs.getInt(KEY_THEME, 0) % temalar.length;
+
+        bind();
+        doldur();
+        dinleyiciler();
+        temaUygula();
+        selamla();
+
+        String son = prefs.getString(KEY_LAST, null);
+        txtSonErisim.setText(son == null ? "İlk kez hoş geldin" : "Son ziyaret: " + son);
     }
 
-    /** XML'deki elemanları Java nesnelerine bağlar. */
-    private void bindUserInterfaceComponents() {
+    private void bind() {
         rootLayout = findViewById(R.id.rootLayout);
+        txtAvatar = findViewById(R.id.txtAvatar);
+        txtSelam = findViewById(R.id.txtSelam);
+        txtKategori = findViewById(R.id.txtKategori);
         txtBaslik = findViewById(R.id.txtBaslik);
-        txtDetayBilgi = findViewById(R.id.txtDetayBilgi);
-        txtSayacGosterge = findViewById(R.id.txtSayacGosterge);
-        txtLogEkrani = findViewById(R.id.txtLogEkrani);
-        btnVeriGetir = findViewById(R.id.btnTikla);
-        btnTemaDegistir = findViewById(R.id.btnTemaDegistir);
+        txtMetin = findViewById(R.id.txtMetin);
+        txtKaynak = findViewById(R.id.txtKaynak);
+        txtSayac = findViewById(R.id.txtSayac);
+        txtTemaAdi = findViewById(R.id.txtTemaAdi);
+        txtSonErisim = findViewById(R.id.txtSonErisim);
+        cardIcerik = findViewById(R.id.cardIcerik);
+        cardSayac = findViewById(R.id.cardSayac);
+        cardTema = findViewById(R.id.cardTema);
+        btnTikla = findViewById(R.id.btnTikla);
+        btnTema = findViewById(R.id.btnTemaDegistir);
         btnSifirla = findViewById(R.id.btnSifirla);
     }
 
-    /** İçerik havuzunu doldurur. */
-    private void populateMasterDataPool() {
-        veriHavuzu.add(new EmreModel("Kimlik Analizi", "İbrahim Emre Kocatopcu: Ekibin lideri, kararlı geliştirici ve güvenilir dost.", "Profil"));
-        veriHavuzu.add(new EmreModel("İsim Kökeni", "Emre: Eski Türkçe'de aşık, dost, halk ozanı ve gönül verilmiş kimse demektir.", "Kültür"));
-        veriHavuzu.add(new EmreModel("Tarihi Miras", "Yunus Emre (1238-1320): Türkçe'nin tasavvuf ve sevgi dilini zirveye taşıyan büyük Türk ozanı.", "Sanat"));
-        veriHavuzu.add(new EmreModel("Müzik Dünyası", "Emre Aydın: Türk rock müziğine damga vurmuş, ödüllü söz yazarı ve besteci.", "Müzik"));
-        veriHavuzu.add(new EmreModel("Sahne Sanatları", "Emre Altuğ ve Emre Kaya: Pop müziğin enerjik sesleri ve hit parça üreticileri.", "Müzik"));
-        veriHavuzu.add(new EmreModel("Yazılım Felsefesi", "Kodlama sadece satır yazmak değil, mantık kurmak ve dijital eser yaratmaktır.", "Teknoloji"));
-        veriHavuzu.add(new EmreModel("Anka Ruhu", "Asla pes etmeyen, küllerinden yeniden doğan ve projelerini sonuna kadar savunan ekip ruhu.", "Ekip"));
-        veriHavuzu.add(new EmreModel("Liderlik", "İbrahim Emre: Kriz anlarında sakin kalabilen, ekibi yönlendiren stratejik akıl.", "Karakter"));
-        veriHavuzu.add(new EmreModel("Felsefi Söz", "\"Sevelim, sevilelim, dünya kimseye kalmaz.\" — Yunus Emre", "Felsefe"));
-        veriHavuzu.add(new EmreModel("Bilgi Notu", "\"İlim ilim bilmektir, ilim kendin bilmektir.\" — Yunus Emre", "Bilim"));
+    private void doldur() {
+        havuz.add(new Bilgi("PROFİL", "İbrahim Emre Kocatopcu",
+                "Ekibin lideri, kararlı bir geliştirici ve güvenilir bir dost. Fikirleri çalışan ürünlere dönüştürmeyi sever.", "Kişisel Profil"));
+        havuz.add(new Bilgi("İSİM KÖKENİ", "Emre ne demek?",
+                "Eski Türkçede \"emre\"; âşık, dost, gönül verilmiş kişi ve halk ozanı anlamlarında kullanılır.", "Türkçe Etimoloji"));
+        havuz.add(new Bilgi("TARİH", "Yunus Emre",
+                "1238 - 1320 yılları arasında yaşamış, Türkçenin sevgi ve tasavvuf dilini zirveye taşıyan büyük ozan.", "Edebiyat Tarihi"));
+        havuz.add(new Bilgi("SÖZ", "Sevgi Üzerine",
+                "\"Sevelim, sevilelim, dünya kimseye kalmaz.\"", "Yunus Emre"));
+        havuz.add(new Bilgi("SÖZ", "Bilgi Üzerine",
+                "\"İlim ilim bilmektir, ilim kendin bilmektir. Sen kendini bilmezsin, ya nice okumaktır.\"", "Yunus Emre"));
+        havuz.add(new Bilgi("MÜZİK", "Emre Aydın",
+                "Türk rock müziğine damga vurmuş, ödüllü söz yazarı ve besteci.", "Müzik Dünyası"));
+        havuz.add(new Bilgi("YAZILIM", "Kod Felsefesi",
+                "İyi kod, satır sayısıyla değil, okunabilirliği ve kurduğu mantıkla ölçülür.", "Yazılım Notu"));
+        havuz.add(new Bilgi("YAZILIM", "Küçük Adımlar",
+                "Büyük projeler, her gün atılan küçük ve düzenli commit'lerle büyür.", "Yazılım Notu"));
+        havuz.add(new Bilgi("EKİP", "Anka Ruhu",
+                "Asla pes etmeyen, küllerinden yeniden doğan ve projesini sonuna kadar savunan ekip ruhu.", "Takım Kültürü"));
+        havuz.add(new Bilgi("LİDERLİK", "Sakin Kalmak",
+                "Kriz anlarında sakin kalmak ve ekibi doğru yöne çevirmek liderliğin en zor ama en değerli yanıdır.", "Liderlik Notu"));
     }
 
-    /** Buton dinleyicilerini atar. */
-    private void setupEventListeners() {
-        if (btnVeriGetir != null) {
-            btnVeriGetir.setOnClickListener(v -> {
-                tiklamaSayaci++;
-                triggerHapticFeedback();
-                playScaleAnimation(v);
-                processAndDisplayRandomData();
-                updateCounterText();
-                savePersistentState();
-            });
-        }
-
-        if (btnTemaDegistir != null) {
-            btnTemaDegistir.setOnClickListener(v -> {
-                temaIndex = (temaIndex + 1) % temaArkaPlanlari.length;
-                triggerHapticFeedback();
-                playScaleAnimation(v);
-                applyTheme();
-                savePersistentState();
-                appendExecutionLog("Tema değişti: " + temaArkaPlanlari[temaIndex]);
-            });
-        }
-
-        if (btnSifirla != null) {
-            btnSifirla.setOnClickListener(v -> {
-                tiklamaSayaci = 0;
-                triggerHapticFeedback();
-                playScaleAnimation(v);
-                updateCounterText();
-                savePersistentState();
-                if (txtBaslik != null) {
-                    txtBaslik.setText("İbrahim Emre Kocatopcu");
-                }
-                appendExecutionLog("Sayaç sıfırlandı.");
-            });
-        }
+    private void dinleyiciler() {
+        btnTikla.setOnClickListener(v -> {
+            titret();
+            yeniBilgi();
+        });
+        btnTema.setOnClickListener(v -> {
+            titret();
+            temaIndex = (temaIndex + 1) % temalar.length;
+            temaUygula();
+            kaydet();
+        });
+        btnSifirla.setOnClickListener(v -> {
+            titret();
+            sayac = 0;
+            sayacYaz();
+            degistir(txtKategori, "HOŞ GELDİN");
+            degistir(txtBaslik, "Baştan başlayalım");
+            degistir(txtMetin, "Sayaç sıfırlandı. Yeni bir bilgi keşfetmeye hazırsın.");
+            degistir(txtKaynak, "");
+            kaydet();
+        });
     }
 
-    /** Rastgele veri seçer ve ekranda gösterir. */
-    private void processAndDisplayRandomData() {
-        if (veriHavuzu.isEmpty()) return;
+    private void yeniBilgi() {
+        int i;
+        do {
+            i = random.nextInt(havuz.size());
+        } while (i == sonIndex && havuz.size() > 1);
+        sonIndex = i;
+        Bilgi b = havuz.get(i);
 
-        EmreModel secilenVeri = veriHavuzu.get(randomGenerator.nextInt(veriHavuzu.size()));
+        degistir(txtKategori, b.kategori);
+        degistir(txtBaslik, b.baslik);
+        degistir(txtMetin, b.metin);
+        degistir(txtKaynak, "— " + b.kaynak);
 
-        String formatliMetin = String.format(Locale.getDefault(),
-                "📌 [%s] %s\n\n💡 Detay: %s\n\n🔄 Toplam Etkileşim: %d",
-                secilenVeri.kategori,
-                secilenVeri.baslik,
-                secilenVeri.aciklama,
-                tiklamaSayaci
-        );
-
-        if (txtBaslik != null) {
-            txtBaslik.setText(formatliMetin);
-            int renkIndex = randomGenerator.nextInt(neonRenkler.length);
-            txtBaslik.setTextColor(Color.parseColor(neonRenkler[renkIndex]));
-        }
-
-        appendExecutionLog("Veri yüklendi: " + secilenVeri.baslik);
+        sayac++;
+        sayacYaz();
+        kaydet();
     }
 
-    /** Seçili arka plan temasını uygular. */
-    private void applyTheme() {
-        if (rootLayout != null) {
-            rootLayout.setBackgroundColor(Color.parseColor(temaArkaPlanlari[temaIndex]));
-        }
+    private void degistir(TextView tv, String yeni) {
+        tv.animate().alpha(0f).setDuration(120).withEndAction(() -> {
+            tv.setText(yeni);
+            tv.animate().alpha(1f).setDuration(200).start();
+        }).start();
     }
 
-    /** Sayaç göstergesini günceller (layout'ta görünürse). */
-    private void updateCounterText() {
-        if (txtSayacGosterge != null) {
-            txtSayacGosterge.setText("Toplam tıklama: " + tiklamaSayaci);
+    private void temaUygula() {
+        Tema t = temalar[temaIndex];
+        int vurgu = Color.parseColor(t.vurgu);
+        int kart = Color.parseColor(t.kart);
+        int cizgi = ColorUtils.setAlphaComponent(Color.WHITE, 28);
+
+        rootLayout.setBackgroundColor(Color.parseColor(t.arka));
+        for (MaterialCardView c : new MaterialCardView[]{cardIcerik, cardSayac, cardTema}) {
+            c.setCardBackgroundColor(kart);
+            c.setStrokeColor(cizgi);
         }
+
+        GradientDrawable avatar = new GradientDrawable();
+        avatar.setShape(GradientDrawable.OVAL);
+        avatar.setColor(ColorUtils.setAlphaComponent(vurgu, 60));
+        avatar.setStroke(dp(2), vurgu);
+        txtAvatar.setBackground(avatar);
+
+        GradientDrawable chip = new GradientDrawable();
+        chip.setCornerRadius(dp(12));
+        chip.setColor(ColorUtils.setAlphaComponent(vurgu, 45));
+        txtKategori.setBackground(chip);
+        txtKategori.setTextColor(vurgu);
+
+        btnTikla.setBackgroundTintList(android.content.res.ColorStateList.valueOf(vurgu));
+        btnTikla.setTextColor(ColorUtils.calculateLuminance(vurgu) > 0.5 ? Color.BLACK : Color.WHITE);
+
+        txtTemaAdi.setText(t.ad);
+        txtTemaAdi.setTextColor(vurgu);
+        txtSayac.setTextColor(vurgu);
+        sayacYaz();
     }
 
-    /** Kısa titreşim üretir. */
-    private void triggerHapticFeedback() {
+    private void sayacYaz() {
+        txtSayac.setText(String.valueOf(sayac));
+    }
+
+    private void selamla() {
+        int saat = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        String s;
+        if (saat < 6) s = "İyi geceler";
+        else if (saat < 12) s = "Günaydın";
+        else if (saat < 18) s = "Tünaydın";
+        else s = "İyi akşamlar";
+        txtSelam.setText(s);
+    }
+
+    private void titret() {
         try {
             if (vibrator != null && vibrator.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE));
+                    vibrator.vibrate(VibrationEffect.createOneShot(25, VibrationEffect.DEFAULT_AMPLITUDE));
                 } else {
-                    vibrator.vibrate(40);
+                    vibrator.vibrate(25);
                 }
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Titreşim hatası: " + e.getMessage());
-        }
+        } catch (Exception ignored) { }
     }
 
-    /** Buton için küçülüp büyüyen animasyon. */
-    private void playScaleAnimation(View view) {
-        ScaleAnimation scaleAnim = new ScaleAnimation(
-                1.0f, 0.92f, 1.0f, 0.92f,
-                Animation.RELATIVE_TO_SELF, 0.5f,
-                Animation.RELATIVE_TO_SELF, 0.5f
-        );
-        scaleAnim.setDuration(100);
-        scaleAnim.setRepeatCount(1);
-        scaleAnim.setRepeatMode(Animation.REVERSE);
-        view.startAnimation(scaleAnim);
+    private void kaydet() {
+        prefs.edit()
+                .putInt(KEY_COUNT, sayac)
+                .putInt(KEY_THEME, temaIndex)
+                .putString(KEY_LAST, new SimpleDateFormat("d MMM, HH:mm", new Locale("tr")).format(new Date()))
+                .apply();
     }
 
-    /** Zaman damgalı log yazar (konsol + ekran). */
-    private void appendExecutionLog(String mesaj) {
-        String zaman = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
-        String logSatiri = "[" + zaman + "] " + mesaj;
-        Log.i(TAG, logSatiri);
-
-        if (txtLogEkrani != null) {
-            String mevcutLoglar = txtLogEkrani.getText().toString();
-            txtLogEkrani.setText(logSatiri + "\n" + mevcutLoglar);
-        }
-    }
-
-    /** Durumu SharedPreferences'a kaydeder. */
-    private void savePersistentState() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(KEY_CLICK_COUNT, tiklamaSayaci);
-        editor.putInt(KEY_THEME_INDEX, temaIndex);
-        editor.putString(KEY_LAST_ACCESS,
-                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
-        editor.apply();
-    }
-
-    /** Kayıtlı durumu okuyup log'a yazar. */
-    private void loadPersistentStateAndLog() {
-        String sonErisim = sharedPreferences.getString(KEY_LAST_ACCESS, "İlk açılış");
-        appendExecutionLog("Oturum başlatıldı. Kayıtlı tıklama: " + tiklamaSayaci);
-        appendExecutionLog("Son erişim: " + sonErisim);
-
-        Toast.makeText(this, "Hoş geldin İbrahim Emre Kocatopcu!", Toast.LENGTH_SHORT).show();
+    private int dp(int v) {
+        return Math.round(v * getResources().getDisplayMetrics().density);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        savePersistentState();
-    }
-
-    /** Veri modeli. */
-    public static class EmreModel {
-        public final String baslik;
-        public final String aciklama;
-        public final String kategori;
-
-        public EmreModel(String baslik, String aciklama, String kategori) {
-            this.baslik = baslik;
-            this.aciklama = aciklama;
-            this.kategori = kategori;
-        }
+        kaydet();
     }
 }
