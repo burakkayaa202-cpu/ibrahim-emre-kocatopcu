@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İbrahim Emre Kocatopcu | Özel Uygulama</title>
+    <style>
+        :root {
+            --bg: #090d16;
+            --card: #111827;
+            --accent: #00f2fe;
+            --accent2: #4facfe;
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px 80px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            animation: fadeIn 0.8s ease;
+        }
+        .avatar {
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #090d16;
+            margin: 0 auto 12px;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
+        }
+        h1 {
+            font-size: 24px;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: var(--muted); font-size: 14px; margin-top: 4px; }
+        .badges {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .badge {
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: var(--accent);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: var(--card);
+            border: 1px solid #1f2937;
+            color: var(--muted);
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #090d16;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+        }
+        .content-box {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border: 1px solid #1f2937;
+            border-radius: 16px;
+            padding: 20px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .content-box.active { display: block; }
+        .info-item {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1f2937;
+        }
+        .info-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .info-title { color: var(--accent); font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+        .info-desc { color: #d1d5db; font-size: 14px; line-height: 1.5; }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .photo-card {
+            background: #1f2937;
+            border-radius: 12px;
+            overflow: hidden;
+            text-align: center;
+            border: 1px solid #374151;
+        }
+        .photo-placeholder {
+            height: 120px;
+            background: linear-gradient(45deg, #1e293b, #0f172a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        .photo-caption { padding: 8px; font-size: 12px; color: var(--muted); }
+        .quote-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 12px;
+            color: #090d16;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .quote-display {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 242, 254, 0.08);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            font-style: italic;
+            font-size: 14px;
+            color: #e5e7eb;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="avatar">İEK</div>
+        <h1>İbrahim Emre Kocatopcu</h1>
+        <p class="subtitle">Resmi Bilgi, Sanat & Kültür Uygulaması</p>
+        <div class="badges">
+            <span class="badge">🦅 Anka Ekibi</span>
+            <span class="badge">⚡ VIP Profil</span>
+            <span class="badge">💻 GitHub App</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('anlam', this)">İsim Anlamı</button>
+        <button class="tab-btn" onclick="openTab('sanat', this)">Sanat & Ünlüler</button>
+        <button class="tab-btn" onclick="openTab('galeri', this)">Galeri & Söz</button>
+    </div>
+
+    <div id="anlam" class="content-box active">
+        <div class="info-item">
+            <div class="info-title">✨ Emre İsminin Anlamı</div>
+            <div class="info-desc">Türkçe kökenli çok güçlü bir isimdir. <b>"Dost, güvenilir arkadaş, gönül adamı ve halk ozanı"</b> anlamlarına gelir. Samimiyeti ve sadakati temsil eder.</div>
+        </div>
+        <div class="info-item">
+            <div class="info-title">👑 İbrahim İsminin Anlamı</div>
+            <div class="info-desc">Köklü ve tarihi bir isim olup <b>"halkların önderi, koruyucu, cömert ve inançlı lider"</b> demektir.</div>
+        </div>
+        <div class="info-item">
+            <div class="info-title">🔥 Karakter Analizi (İbrahim Emre)</div>
+            <div class="info-desc">Hem liderlik ruhunu hem de dost canlısı, eğlenceli ve ekip ruhuna önem veren karakteri bir arada taşır.</div>
+        </div>
+    </div>
+
+    <div id="sanat" class="content-box">
+        <div class="info-item">
+            <div class="info-title">📜 Yunus Emre (1238 - 1320)</div>
+            <div class="info-desc">Türk edebiyatının ve tasavvuf şiirinin en büyük ozanı. Sevgi, hoşgörü ve insanlık felsefesiyle dünyaya mal olmuş sanatçı.</div>
+        </div>
+        <div class="info-item">
+            <div class="info-title">🎸 Emre Aydın</div>
+            <div class="info-desc">Türk rock müziğinin en sevilen söz yazarlarından ve solistlerinden biri. MTV Avrupa Müzik Ödülü sahibi sanatçı.</div>
+        </div>
+        <div class="info-item">
+            <div class="info-title">🎤 Emre Altuğ & Emre Kaya</div>
+            <div class="info-desc">Türk pop müziğine damga vurmuş, hit şarkılarıyla tanınan ünlü besteci ve yorumcular.</div>
+        </div>
+    </div>
+
+    <div id="galeri" class="content-box">
+        <div class="gallery">
+            <div class="photo-card">
+                <div class="photo-placeholder">🦅</div>
+                <div class="photo-caption">Anka Ruhu</div>
+            </div>
+            <div class="photo-card">
+                <div class="photo-placeholder">💻</div>
+                <div class="photo-caption">Kod & Teknoloji</div>
+            </div>
+            <div class="photo-card">
+                <div class="photo-placeholder">🎮</div>
+                <div class="photo-caption">Oyun & Espor</div>
+            </div>
+            <div class="photo-card">
+                <div class="photo-placeholder">🏆</div>
+                <div class="photo-caption">İbrahim Emre</div>
+            </div>
+        </div>
+        <div class="quote-display" id="quoteBox">"Bana seni gerek seni..." — Yunus Emre</div>
+        <button class="quote-btn" onclick="newQuote()">🎲 Yeni Emre Sözü Getir</button>
+    </div>
+
+    <script>
+        function openTab(tabId, btn) {
+            document.querySelectorAll('.content-box').forEach(box => box.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        const quotes = [
+            '"Bana seni gerek seni..." — Yunus Emre',
+            '"Sevelim, sevilelim, dünya kimseye kalmaz." — Yunus Emre',
+            '"İlim ilim bilmektir, ilim kendin bilmektir." — Yunus Emre',
+            '"Dostun evi gönüllerdir, gönüller yapmaya geldim." — Yunus Emre',
+            '"İbrahim Emre Kocatopcu: Ekibin vazgeçilmez gücü!"'
+        ];
+
+        function newQuote() {
+            const random = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('quoteBox').innerText = random;
+        }
+    </script>
+</body>
+</html>
