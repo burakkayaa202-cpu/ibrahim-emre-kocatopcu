@@ -1,4 +1,4 @@
-name: EmreApp Build & Check
+name: Emre Build & Release
 
 on:
   push:
@@ -11,20 +11,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: set up JDK 17
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Proje Dosyalari Dogrulaniyor
-      run: |
-        echo "İbrahim Emre Kocatopcu projesi kaynak kodları tam."
-        if [ -f "./gradlew" ]; then
-          ./gradlew assembleDebug
-        else
-          echo "Gradle wrapper henüz eklenmedi ama Java kaynak kodları ve yapı tam!"
-        fi
+    - name: Install Android SDK & Build Tools
+      uses: android-actions/setup-android@v3
 
-    - name: Islemi Tamamla
-      run: echo "Build süreci başarıyla tamamlandı."
+    - name: Generate Gradle Wrapper on-the-fly
+      run: |
+        gradle wrapper --gradle-version 8.0
+        chmod +x gradlew
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: emrekocatopcu_31
+        path: app/build/outputs/apk/debug/app-debug.apk
