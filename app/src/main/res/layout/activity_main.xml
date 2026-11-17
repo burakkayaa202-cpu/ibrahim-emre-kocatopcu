@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0D1117"
-    android:gravity="center"
     android:orientation="vertical"
     android:padding="20dp">
 
     <TextView
-        android:id="@+id/txtIsim"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="12dp"
+        android:gravity="center"
         android:text="İbrahim Emre Kocatopcu"
         android:textColor="#58A6FF"
         android:textSize="22sp"
@@ -21,7 +21,6 @@
         android:id="@+id/txtBaslik"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
         android:background="#161B22"
         android:gravity="center"
         android:padding="20dp"
@@ -29,12 +28,74 @@
         android:textColor="#C9D1D9"
         android:textSize="16sp" />
 
-    <com.google.android.material.button.MaterialButton
+    <TextView
+        android:id="@+id/txtDetayBilgi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="8dp"
+        android:textColor="#8B949E"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/txtSayacGosterge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="Toplam tıklama: 0"
+        android:textColor="#3FB950"
+        android:textSize="14sp" />
+
+    <Button
         android:id="@+id/btnTikla"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:backgroundTint="#238636"
         android:text="Söz / Bilgi Getir"
         android:textColor="#FFFFFF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnTemaDegistir"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#1F6FEB"
+            android:text="Tema"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btnSifirla"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#DA3633"
+            android:text="Sıfırla"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_weight="1"
+        android:background="#161B22">
+
+        <TextView
+            android:id="@+id/txtLogEkrani"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="#7EE787"
+            android:textSize="12sp" />
+    </ScrollView>
 
 </LinearLayout>
