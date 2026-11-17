@@ -10,13 +10,29 @@ android {
         applicationId "com.kocatopcu.emre"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        def run = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+        versionCode run
+        versionName "1.0." + run
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv("KEYSTORE_PATH")
+            if (ks != null) {
+                storeFile file(ks)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            if (System.getenv("KEYSTORE_PATH") != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
